@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psalms.AspNetCore.Auth.Jwt", "Psalms.AspNetCore.Auth.Jwt\Psalms.AspNetCore.Auth.Jwt.csproj", "{93E97D8E-3EC5-4217-841E-152C47EA7492}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psalms.AspNetCore.Auth.Jwt.Tests", "Psalms.AspNetCore.Auth.Jwt.Tests\Psalms.AspNetCore.Auth.Jwt.Tests.csproj", "{C2CBCEBB-E3E9-4344-9302-EF614955D6D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +17,15 @@ Global
 		{93E97D8E-3EC5-4217-841E-152C47EA7492}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93E97D8E-3EC5-4217-841E-152C47EA7492}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93E97D8E-3EC5-4217-841E-152C47EA7492}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2CBCEBB-E3E9-4344-9302-EF614955D6D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2CBCEBB-E3E9-4344-9302-EF614955D6D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2CBCEBB-E3E9-4344-9302-EF614955D6D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2CBCEBB-E3E9-4344-9302-EF614955D6D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8B76488F-21B8-46DA-AFDF-6B31842CE766}
 	EndGlobalSection
 EndGlobal
