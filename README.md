@@ -33,7 +33,7 @@ And when you're dealing with **microservices**, that number only multiplies over
 
 ```bash
 
-dotnet add package PsalmsJwtTokenService --version 1.0.0
+dotnet add package Psalms.AspNetCore.Auth.Jwt --version 1.0.0
 ```
 
 Or via the NuGet Gallery (replace with actual link).
