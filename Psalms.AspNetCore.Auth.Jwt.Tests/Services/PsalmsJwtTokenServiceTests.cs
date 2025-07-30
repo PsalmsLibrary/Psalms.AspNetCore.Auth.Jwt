@@ -41,7 +41,7 @@ public class PsalmsJwtTokenServiceTests
         };
 
         // Act
-        string token = service.GenerateToken(claims);
+        string token = service.GenerateAccessToken(claims);
 
         // Assert
         Assert.False(string.IsNullOrWhiteSpace(token));
@@ -62,7 +62,7 @@ public class PsalmsJwtTokenServiceTests
         var config = BuildConfiguration(new Dictionary<string, string?> { { "JWT:Key", null } });
 
         // Act & Assert
-        var ex = Assert.Throws<Exception>(() => new PsalmsJwtTokenService(config).GenerateToken(null));
+        var ex = Assert.Throws<Exception>(() => new PsalmsJwtTokenService(config).GenerateAccessToken(null));
         Assert.Equal("Key not found", ex.Message);
     }
 
@@ -78,7 +78,7 @@ public class PsalmsJwtTokenServiceTests
         var claims = new[] { new Claim("user", "test") };
 
         // Act
-        var token = service.GenerateToken(claims);
+        var token = service.GenerateAccessToken(claims);
 
         // Assert
         Assert.False(string.IsNullOrWhiteSpace(token));
@@ -93,7 +93,7 @@ public class PsalmsJwtTokenServiceTests
         var claims = new[] { new Claim("email", "user@test.com") };
 
         // Act
-        var token = service.GenerateToken(claims);
+        var token = service.GenerateAccessToken(claims);
         var handler = new JwtSecurityTokenHandler();
 
         // Assert
