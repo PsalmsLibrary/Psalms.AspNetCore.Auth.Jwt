@@ -26,7 +26,7 @@ public partial class PsalmsJwtTokenService
         if (_refreshTokenRepository is not null)
             await _refreshTokenRepository.SaveRefreshTokenAsync(model);
 
-        return await Task.FromResult(model);
+        return model;
     }
 
     /// <summary>
@@ -61,9 +61,9 @@ public partial class PsalmsJwtTokenService
 
         if (auth.RefreshTokenModel.RefreshToken is null) throw new NullReferenceException("Refresh token is null.");
 
-        if (_refreshTokenRepository is null) throw new Exception("Repository not found");
+        if (_refreshTokenRepository is null) throw new Exception("RefreshTokenRepository was not configured.");
 
         if (!await _refreshTokenRepository.RefreshTokenExistAsync(auth.RefreshTokenModel.RefreshToken))
-            throw new Exception("refresh token no exist");
+            throw new Exception("refresh token does no exist");
     }
 }
