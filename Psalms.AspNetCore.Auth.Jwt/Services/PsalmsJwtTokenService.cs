@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Psalms.AspNetCore.Auth.Jwt.Interfaces;
+using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken;
+using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken.Memory;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Psalms.Auth.Jwt;
 
@@ -11,7 +13,7 @@ namespace Psalms.Auth.Jwt;
 /// Part of the <c>Psalms</c> library family, this service offers a clean and reusable way
 /// to issue signed tokens for authentication and authorization purposes.
 /// </summary>
-public class PsalmsJwtTokenService
+public partial class PsalmsJwtTokenService
 {
     #region Attributes
 
@@ -34,6 +36,7 @@ public class PsalmsJwtTokenService
     /// Application configuration instance used to load values from <c>appsettings.json</c> or environment variables.
     /// </summary>
     private readonly IConfiguration _configuration;
+    private readonly IPsalmsRefreshTokenRepository? _refreshTokenRepository;
 
     #endregion
 
@@ -58,40 +61,11 @@ public class PsalmsJwtTokenService
         _credentials   = new(() => new SigningCredentials(_key.Value, SecurityAlgorithms.HmacSha256));
         _tokenHandler  = new(() => new JwtSecurityTokenHandler());
     }
-
-    #endregion
-
-    #region Methods
-    /// <summary>
-    /// Converts a raw key string into a <see cref="SymmetricSecurityKey"/> using UTF-8 encoding.
-    /// </summary>
-    /// <param name="key">The key string from configuration.</param>
-    /// <returns>An instance of <see cref="SymmetricSecurityKey"/>.</returns>
-    /// <exception cref="Exception">Thrown if the key is null or not found.</exception>
-    private static SymmetricSecurityKey GetSymmetricSecurityKeyLazy(string? key)
-        => new(Encoding.UTF8.GetBytes(key ?? throw new Exception("Key not found")));
-
-    /// <summary>
-    /// Generates a JWT token using the given claims and the configuration values.
-    /// </summary>
-    /// <param name="claims">An array of claims to include in the token payload.</param>
-    /// <returns>A signed JWT token as a string.</returns>
-    public string GenerateToken(Claim[] claims)
-    {
-        DateTime? expires = null;
-
-        if (_configuration["JWT:Expires"] is string expiresValue && int.TryParse(expiresValue, out int hours))
-            expires = DateTime.UtcNow.AddHours(hours);
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration["JWT:Issuer"],
-            audience: _configuration["JWT:Audience"],
-            claims: claims,
-            expires: expires,
-            signingCredentials: _credentials.Value
-        );
-
-        return _tokenHandler.Value.WriteToken(token);
-    }
+    public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenEFContext context) : this(configuration)
+        => _refreshTokenRepository = new EFRefreshTokenRepository(context);
+    public PsalmsJwtTokenService(IConfiguration configuration, IMemoryCache cache) : this(configuration)
+        => _refreshTokenRepository = new RefreshTokenRepositoryInMemory(cache);
+    public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenRepository repository) : this(configuration)
+        => _refreshTokenRepository = repository;
     #endregion
 }
