@@ -70,8 +70,6 @@ dotnet add package Psalms.AspNetCore.Auth.Jwt --version 2.0.0
 ### 🧱 1. Setup in `Program.cs` (In-Memory version)
 
 ```csharp
-csharp
-CopiarEditar
 builder.Services.AddPsalmsJwtAuthentication(builder.Configuration);
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<PsalmsJwtTokenService>();
@@ -80,8 +78,6 @@ builder.Services.AddScoped<PsalmsJwtTokenService>();
 ### 📲 2. Inject and use in your Controller
 
 ```csharp
-csharp
-CopiarEditar
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(PsalmsJwtTokenService jwtService) : ControllerBase
@@ -110,8 +106,6 @@ public class AuthController(PsalmsJwtTokenService jwtService) : ControllerBase
 ### 🧩 3. Return tokens separately (optional)
 
 ```csharp
-csharp
-CopiarEditar
 [HttpPost]
 public async Task<IActionResult> Login()
 {
