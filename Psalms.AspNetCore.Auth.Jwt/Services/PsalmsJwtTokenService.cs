@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Psalms.AspNetCore.Auth.Jwt.Interfaces;
+using Psalms.AspNetCore.Auth.Jwt.Models;
 using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken;
-using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken.Memory;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Psalms.Auth.Jwt;
@@ -33,6 +34,11 @@ public partial class PsalmsJwtTokenService
     private readonly Lazy<JwtSecurityTokenHandler> _tokenHandler;
 
     /// <summary>
+    /// Provides lazy initialization for the password hasher used with refresh token models.
+    /// </summary>
+    private readonly Lazy<IPasswordHasher<RefreshTokenModel>> _refreshTokenHasher;
+
+    /// <summary>
     /// Application configuration instance used to load values from <c>appsettings.json</c> or environment variables.
     /// </summary>
     private readonly IConfiguration _configuration;
@@ -56,15 +62,14 @@ public partial class PsalmsJwtTokenService
     /// </param>
     public PsalmsJwtTokenService(IConfiguration configuration)
     {
-        _configuration = configuration;
-        _key           = new(() => GetSymmetricSecurityKeyLazy(configuration["JWT:Key"]));
-        _credentials   = new(() => new SigningCredentials(_key.Value, SecurityAlgorithms.HmacSha256));
-        _tokenHandler  = new(() => new JwtSecurityTokenHandler());
+        _configuration      = configuration;
+        _key                = new(() => GetSymmetricSecurityKeyLazy(configuration["JWT:Key"]));
+        _credentials        = new(() => new SigningCredentials(_key.Value, SecurityAlgorithms.HmacSha256));
+        _tokenHandler       = new(() => new JwtSecurityTokenHandler());
+        _refreshTokenHasher = new(() => new PasswordHasher<RefreshTokenModel>());
     }
     public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenEFContext context) : this(configuration)
         => _refreshTokenRepository = new EFRefreshTokenRepository(context);
-    public PsalmsJwtTokenService(IConfiguration configuration, IMemoryCache cache) : this(configuration)
-        => _refreshTokenRepository = new RefreshTokenRepositoryInMemory(cache);
     public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenRepository repository) : this(configuration)
         => _refreshTokenRepository = repository;
     #endregion

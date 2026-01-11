@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Psalms.AspNetCore.Auth.Jwt.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -35,6 +36,24 @@ public partial class PsalmsJwtTokenService
             throw new Exception("Invalid token.");
 
         return Task.FromResult(claims);
+    }
+
+    /// <summary>
+    /// Validates the given authentication response for the presence and existence of tokens.
+    /// Throws exceptions if any validation fails.
+    /// </summary>
+    /// <param name="auth">The authentication response to validate.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="NullReferenceException">Thrown when tokens are null.</exception>
+    /// <exception cref="Exception">Thrown when repository is not found or refresh token does not exist.</exception>
+    private async Task ValidateAuthResponseAsync(AuthResponse auth)
+    {
+        if (auth.AccessToken is null || auth.RefreshTokenModel is null)
+            throw new NullReferenceException("Auth response is null");
+
+        if (auth.RefreshTokenModel.RefreshToken is null) throw new NullReferenceException("Refresh token is null.");
+
+        if (_refreshTokenRepository is null) throw new Exception("RefreshTokenRepository was not configured.");
     }
 
     /// <summary>
