@@ -8,10 +8,7 @@ namespace Psalms.AspNetCore.Auth.Jwt.Models;
 /// </summary>
 public class RefreshTokenModel
 {
-    /// <summary>
-    /// The unique refresh token value, used to authenticate token refresh requests.
-    /// Acts as the primary key in storage.
-    /// </summary>
     [Key]
+    public Guid Id { get; set; }
     public string? RefreshToken { get; set; }
 }
