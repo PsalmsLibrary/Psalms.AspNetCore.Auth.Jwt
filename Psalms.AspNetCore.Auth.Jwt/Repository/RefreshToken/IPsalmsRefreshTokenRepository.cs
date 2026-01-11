@@ -19,12 +19,19 @@ public interface IPsalmsRefreshTokenRepository
     /// </summary>
     /// <param name="token">The refresh token to be deleted.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task DeleteRefreshTokenAsync(string token);
+    Task DeleteRefreshTokenAsync(Guid id);
 
     /// <summary>
     /// Checks if a given refresh token exists in the storage.
     /// </summary>
     /// <param name="token">The refresh token to be verified.</param>
     /// <returns>A task that returns true if the token exists, otherwise false.</returns>
-    Task<bool> RefreshTokenExistAsync(string token);
+    Task<bool> RefreshTokenExistAsync(Guid id);
+    /// <summary>
+    /// Asynchronously retrieves a refresh token by its unique identifier.  
+    /// </summary>
+    /// <param name="id">The unique identifier of the refresh token to retrieve.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the <see cref="RefreshTokenModel"/>
+    /// if found; otherwise, <c>null</c>.</returns>
+    Task<RefreshTokenModel> GetByIdAsync(Guid id);
 }
