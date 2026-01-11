@@ -1,4 +1,5 @@
-﻿using Psalms.AspNetCore.Auth.Jwt.Models;
+﻿using Microsoft.AspNetCore.Identity;
+using Psalms.AspNetCore.Auth.Jwt.Models;
 using System.Security.Cryptography;
 
 namespace Psalms.Auth.Jwt;
@@ -19,7 +20,7 @@ public partial class PsalmsJwtTokenService
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
 
-        var refreshToken = Convert.ToBase64String(randomNumber);
+        var refreshToken = _refreshTokenHasher.Value.HashPassword(new(), Convert.ToBase64String(randomNumber));
 
         RefreshTokenModel model = new() { RefreshToken = refreshToken };
 
@@ -39,31 +40,16 @@ public partial class PsalmsJwtTokenService
     {
         await ValidateAuthResponseAsync(auth);
 
-        var claims = await GetClaimsPrincipalInExpiredTokenAsync(auth.AccessToken!);
+        var claims = await GetClaimsPrincipalInExpiredTokenAsync(auth.AccessToken!);            
+    
+        var refreshToken = await _refreshTokenRepository!.GetByIdAsync(auth.RefreshTokenModel!.Id);
 
-        await _refreshTokenRepository!.DeleteRefreshTokenAsync(auth.RefreshTokenModel!.RefreshToken!);
+        var result = _refreshTokenHasher.Value.VerifyHashedPassword(refreshToken, refreshToken.RefreshToken!, auth.RefreshTokenModel.RefreshToken!);
+
+        if (result == PasswordVerificationResult.Failed) throw new Exception("Invalid refresh token.");
+
+        await _refreshTokenRepository.DeleteRefreshTokenAsync(auth.RefreshTokenModel.Id);
 
         return await GetAuthResponseAsync(claims.Claims);
-    }
-
-    /// <summary>
-    /// Validates the given authentication response for the presence and existence of tokens.
-    /// Throws exceptions if any validation fails.
-    /// </summary>
-    /// <param name="auth">The authentication response to validate.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="NullReferenceException">Thrown when tokens are null.</exception>
-    /// <exception cref="Exception">Thrown when repository is not found or refresh token does not exist.</exception>
-    private async Task ValidateAuthResponseAsync(AuthResponse auth)
-    {
-        if (auth.AccessToken is null || auth.RefreshTokenModel is null)
-            throw new NullReferenceException("Auth response is null");
-
-        if (auth.RefreshTokenModel.RefreshToken is null) throw new NullReferenceException("Refresh token is null.");
-
-        if (_refreshTokenRepository is null) throw new Exception("RefreshTokenRepository was not configured.");
-
-        if (!await _refreshTokenRepository.RefreshTokenExistAsync(auth.RefreshTokenModel.RefreshToken))
-            throw new Exception("refresh token does no exist");
     }
 }
