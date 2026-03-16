@@ -1,205 +1,241 @@
-# 📖 PsalmsJwtTokenService
+# Psalms.AspNetCore.Jwt
 
-A simple, testable, and configuration-driven JWT token generator and refresh token manager for .NET applications.
+**Psalms.AspNetCore.Jwt** is a lightweight and extensible JWT authentication library for ASP.NET Core.
+It provides a clean abstraction for generating **access tokens**, managing **refresh tokens**, and integrating with ASP.NET Core authentication middleware.
 
-Part of the **Psalms** library family — clean code, clear purpose.
-
----
-
-## 👋 Hello? 🤔
-
-Have you ever stopped to think about how much time and boilerplate code you waste just to implement JWT authentication in your app?
-
-And when you're dealing with microservices... that number only multiplies.
-
-Welcome to Psalms, friend. You're not alone anymore. We've built this so you don't have to repeat yourself ever again.
+The library was designed to simplify JWT usage while keeping the implementation **secure, configurable, and adaptable to different storage strategies**.
 
 ---
 
-## ✨ Features
+# ✨ Features
 
-- ✅ Generate **JWT access tokens** based on claims
-- 🔁 Generate and persist secure **refresh tokens**
-- 🔄 Support for **token renewal** using a validated refresh token
-- 🧩 Pluggable refresh token repositories:
-    - EF Core (`IPsalmsRefreshTokenEFContext`)
-    - In-Memory (`IMemoryCache`)
-    - Custom (`IPsalmsRefreshTokenRepository`)
-- 🔍 Extract `ClaimsPrincipal` from expired access tokens
-- ⚙️ Configuration via `IConfiguration` (`appsettings.json`)
-- ⚡ Minimal dependencies, uses `JwtSecurityTokenHandler` from `System.IdentityModel.Tokens.Jwt`
-- 🔧 Optional token expiration
-- 🧪 Fully unit tested with xUnit
+* JWT Access Token generation
+* Secure Refresh Token generation
+* Refresh Token validation and rotation
+* Hashing of refresh tokens before persistence
+* Support for multiple refresh token storage strategies:
+
+  * `IDistributedCache` (Redis, SQL Server cache, etc.)
+  * Entity Framework repositories
+  * Custom repositories via interface
+* Configuration-driven token settings
+* Simple ASP.NET Core authentication integration
 
 ---
 
-## 📦 Installation
+# 📦 Installation
 
-Via NuGet:
+Add the package to your project:
 
-```bash
-dotnet add package Psalms.AspNetCore.Auth.Jwt --version 2.0.0
+```
+dotnet add package Psalms.AspNetCore.Jwt
 ```
 
-## ⚙️ Configuration (`appsettings.json`)
+---
+
+# ⚙️ Configuration
+
+Add the JWT configuration to your `appsettings.json`.
 
 ```json
-
-"JWT": {
-  "Key": "your-secret-key",
-  "Issuer": "your-api",
-  "Audience": "your-client",
-  "Expires": "8" // in hours (optional)
+{
+  "JWT": {
+    "Key": "your-super-secret-key",
+    "Issuer": "your-app",
+    "Audience": "your-app-users",
+    "Expires": "1" // in hours
+  }
 }
 ```
 
-| Key | Description |
-| --- | --- |
-| `Key` | Secret string used to sign the token (Required) |
-| `Issuer` | Identifier for your API or auth server (Optional) |
-| `Audience` | Intended recipient of the token (Optional) |
-| `Expires` | Token lifetime in hours (Optional) |
+### Configuration Fields
 
-> ⚠️ Use a strong key (at least 32 characters) and never commit secrets to your repository.
-> 
+| Key            | Description                    |
+| -------------- | ------------------------------ |
+| `JWT:Key`      | Secret key used to sign tokens |
+| `JWT:Issuer`   | Token issuer                   |
+| `JWT:Audience` | Token audience                 |
+| `JWT:Expires`  | Token expiration time in hours |
 
 ---
 
-## 🛠 Example Usage with RefreshToken
+# 🚀 Setup
 
-### 🧱 1. Setup in `Program.cs` (In-Memory version)
+Register the authentication service in `Program.cs`:
 
 ```csharp
 builder.Services.AddPsalmsJwtAuthentication(builder.Configuration);
-builder.Services.AddMemoryCache();
-builder.Services.AddScoped<PsalmsJwtTokenService>();
 ```
 
-### 📲 2. Inject and use in your Controller
+This will configure the ASP.NET Core authentication middleware using `JwtBearer`.
+
+---
+
+# 🔑 Generating Tokens
+
+Inject `IPsalmsJwtTokenService` and generate tokens.
 
 ```csharp
-[Route("api/[controller]")]
-[ApiController]
-public class AuthController(PsalmsJwtTokenService jwtService) : ControllerBase
+public class AuthService
 {
-    [HttpPost]
-    public async Task<IActionResult> Login()
+    private readonly IPsalmsJwtTokenService _jwt;
+
+    public AuthService(IPsalmsJwtTokenService jwt)
     {
-        // TODO: validate login credentials here
-
-        var userClaims = new List<Claim>()
-        {
-            new(ClaimTypes.Name, "ExampleName")
-        };
-
-        return Ok(await jwtService.GetAuthResponseAsync(userClaims));
+        _jwt = jwt;
     }
 
-    [HttpPost("Refresh")]
-    public async Task<IActionResult> RefreshToken([FromBody] AuthResponse authResponse)
-        => Ok(await jwtService.RefreshTokenAsync(authResponse));
-}
-```
-
----
-
-### 🧩 3. Return tokens separately (optional)
-
-```csharp
-[HttpPost]
-public async Task<IActionResult> Login()
-{
-    var claims = new List<Claim>()
+    public async Task<AuthResponse> Authenticate(IEnumerable<Claim> claims)
     {
-        new(ClaimTypes.Name, "ExampleName")
-    };
-
-    var accessToken = await jwtService.GenerateAccessTokenAsync(claims);
-    var refreshToken = await jwtService.GenerateRefreshTokenAsync();
-
-    return Ok(new AuthResponse
-    {
-        AccessToken = accessToken,
-        RefreshToken = refreshToken
-    })
-```
-
-> ⚠️ To refresh the token, you'll need to pass an AuthResponse object (which includes both the access and refresh tokens).
-> 
-> 
-> ✅ Nothing stops you from generating access and refresh tokens independently if needed!
-> 
-
----
-
-## 🗃️ EF Core Integration
-
-### 1. Register in `Program.cs`
-
-```csharp
-builder.Services.AddPsalmsJwtAuthentication(builder.Configuration);
-builder.Services.AddDbContext<AppDbContext>(options => { /* your config */ });
-builder.Services.AddScoped<IPsalmsRefreshTokenEFContext, AppDbContext>();
-builder.Services.AddScoped<PsalmsJwtTokenService>();
-```
-
-### 2. Implement the interface in your DbContext
-
-```csharp
-public class AppDbContext : DbContext, IPsalmsRefreshTokenEFContext
-{
-    public DbSet<RefreshTokenModel> Refreshes { get; set; }
-
-    public Task ConfirmChangesAsync()
-        => SaveChangesAsync();
+        return await _jwt.GetAuthResponseAsync(claims);
+    }
 }
 ```
 
+The response contains:
+
+* Access Token
+* Refresh Token
+
 ---
 
-## 🧱 Custom Repository Integration
+# 🔄 Refresh Token Flow
 
-You can also implement your own refresh token storage:
+The refresh flow works as follows:
+
+1. Client sends an expired access token and a refresh token.
+2. The service validates the refresh token.
+3. The old refresh token is removed.
+4. A new access token and refresh token are issued.
 
 ```csharp
-public class MyRepository : IPsalmsRefreshTokenRepository
+var newAuth = await jwtService.RefreshTokenAsync(authResponse);
+```
+
+---
+
+# 🔐 Refresh Token Security
+
+Refresh tokens are generated using a **cryptographically secure random generator**.
+
+Before being stored, refresh tokens are hashed using the password hashing mechanism from ASP.NET Core Identity.
+
+This ensures that:
+
+* Tokens are **never stored in plaintext**
+* Compromised storage does **not expose usable tokens**
+
+---
+
+# 🗄 Refresh Token Storage
+
+The library supports multiple storage strategies.
+
+## 1️⃣ Distributed Cache (Recommended for scalable systems)
+
+You can use `IDistributedCache` to store refresh tokens in Redis or another distributed cache.
+
+```csharp
+var service = new PsalmsJwtTokenService(configuration, distributedCache);
+```
+
+This enables:
+
+* horizontal scaling
+* fast token lookup
+* automatic expiration via cache policies
+
+---
+
+## 2️⃣ Entity Framework
+
+If you prefer database persistence, use an EF repository.
+
+```csharp
+var service = new PsalmsJwtTokenService(configuration, refreshTokenContext);
+```
+
+---
+
+## 3️⃣ Custom Repository
+
+You can implement your own repository.
+
+```csharp
+public class CustomRepository : IPsalmsRefreshTokenRepository
 {
-    public Task DeleteRefreshTokenAsync(string refreshToken) 
-    => throw new NotImplementedException();
-    public Task<bool> RefreshTokenExistAsync(string refreshToken) 
-    => throw new NotImplementedException();
-    public Task SaveRefreshTokenAsync(RefreshTokenModel model) 
-    => throw new NotImplementedException();
+    // custom implementation
 }
 ```
 
-And register it in `Program.cs`:
+Then inject it:
 
 ```csharp
-builder.Services.AddPsalmsJwtAuthentication(builder.Configuration);
-builder.Services.AddScoped<IPsalmsRefreshTokenRepository, MyRepository>();
-builder.Services.AddScoped<PsalmsJwtTokenService>();
+var service = new PsalmsJwtTokenService(configuration, repository);
 ```
 
 ---
 
-## 📥 AuthResponse Example
+# 🧠 Architecture
+
+The library separates responsibilities into clear components:
+
+| Component                       | Responsibility                        |
+| ------------------------------- | ------------------------------------- |
+| `PsalmsJwtTokenService`         | Token generation and validation       |
+| `IPsalmsRefreshTokenRepository` | Refresh token persistence abstraction |
+| `DistributedCacheRepository`    | Distributed cache implementation      |
+| `EFRefreshTokenRepository`      | Entity Framework implementation       |
+
+This architecture allows the authentication system to adapt to different application requirements.
+
+---
+
+# 🔒 Token Validation
+
+The library internally configures `TokenValidationParameters` using the configured JWT settings.
+
+Validation includes:
+
+* issuer
+* audience
+* signing key
+* token lifetime
+
+---
+
+# 📚 Example Auth Response
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "e10399da-3023-4e1f-bf2f-44f10d5b8bb9"
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI...",
+  "refreshTokenModel": {
+    "id": "8cdb92c2-5e10-4b8f-9d0e-bcd79f9c3a3c",
+    "refreshToken": "generated-token",
+    "expires": "2026-03-16T20:00:00Z"
+  }
 }
 ```
 
 ---
 
-## 📫 Contributing
+# 🛠 Extensibility
 
-We welcome your contributions! Feel free to open an issue, suggest an improvement, or send a pull request.
+The library was designed to be extensible.
+
+You can customize:
+
+* refresh token storage
+* authentication flows
+* claim generation
+* token validation
+
+without modifying the core library.
 
 ---
 
-## 📄 License
+# 📜 License
 
-MIT License © 2025 [PsalmsLibrary]
+This project is part of the **Psalms** ecosystem of libraries.
+
+Feel free to contribute and improve the project.
