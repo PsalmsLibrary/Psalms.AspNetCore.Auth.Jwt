@@ -16,16 +16,28 @@ public partial class PsalmsJwtTokenService
     /// <returns>A <see cref="RefreshTokenModel"/> containing the generated refresh token.</returns>
     public async Task<RefreshTokenModel> GenerateRefreshTokenAsync()
     {
-        var randomNumber = new byte[32];
+        var bytes = new byte[32];
+
         using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
+        rng.GetBytes(bytes);
 
-        var refreshToken = _refreshTokenHasher.Value.HashPassword(new(), Convert.ToBase64String(randomNumber));
+        var token = Convert.ToBase64String(bytes);
 
-        RefreshTokenModel model = new() { RefreshToken = refreshToken };
+        var hash = _refreshTokenHasher.Value.HashPassword(new(), token);
+
+        RefreshTokenModel model = new()
+        {
+            Id = Guid.NewGuid(),
+            RefreshToken = hash,        
+        };
+
+        if (_configuration["JWT:Expires"] is string expiresValue && int.TryParse(expiresValue, out int hours))
+            model.Expires = DateTime.UtcNow.AddHours(hours);
 
         if (_refreshTokenRepository is not null)
             await _refreshTokenRepository.SaveRefreshTokenAsync(model);
+
+        model.RefreshToken = token;
 
         return model;
     }
@@ -42,7 +54,8 @@ public partial class PsalmsJwtTokenService
 
         var claims = await GetClaimsPrincipalInExpiredTokenAsync(auth.AccessToken!);            
     
-        var refreshToken = await _refreshTokenRepository!.GetByIdAsync(auth.RefreshTokenModel!.Id);
+        var refreshToken = await _refreshTokenRepository!.GetByIdAsync(auth.RefreshTokenModel!.Id)
+            ?? throw new ArgumentNullException("Refresh token is expired.");
 
         var result = _refreshTokenHasher.Value.VerifyHashedPassword(refreshToken, refreshToken.RefreshToken!, auth.RefreshTokenModel.RefreshToken!);
 
