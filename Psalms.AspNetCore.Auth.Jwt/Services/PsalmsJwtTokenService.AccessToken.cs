@@ -25,7 +25,7 @@ public partial class PsalmsJwtTokenService
             expires: expires,
             signingCredentials: _credentials.Value
         );
-
+            
         return Task.FromResult(_tokenHandler.Value.WriteToken(token));
     }
 
