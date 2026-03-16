@@ -8,7 +8,7 @@ public class DistributedCacheRepository(IDistributedCache cache) : IPsalmsRefres
     public async Task DeleteRefreshTokenAsync(Guid id) => await cache.RemoveAsync(id.ToString());
 
     public async Task<RefreshTokenModel?> GetByIdAsync(Guid id)
-        => await cache.GetStringAsync(id.ToString()) is string value
+        => await cache.GetStringAsync($"refresh-token:{id}") is string value
             ? new RefreshTokenModel { Id = id, RefreshToken = value }
             : null;
 
