@@ -1,11 +1,10 @@
 ﻿using Psalms.AspNetCore.Auth.Jwt.Models;
 using Psalms.AspNetCore.Auth.Jwt.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
-namespace Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken;
+namespace Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken.EF;
 
-internal class EFRefreshTokenRepository(IPsalmsRefreshTokenEFContext context) : IPsalmsRefreshTokenRepository
+public class EFRefreshTokenRepository(IPsalmsRefreshTokenEFContext context) : IPsalmsRefreshTokenRepository
 {
     public async Task DeleteRefreshTokenAsync(Guid id)
     {
@@ -23,6 +22,6 @@ internal class EFRefreshTokenRepository(IPsalmsRefreshTokenEFContext context) : 
         await context.ConfirmChangesAsync();
     }
 
-    public async Task<RefreshTokenModel> GetByIdAsync(Guid id) => await context.Refreshes.FirstOrDefaultAsync(x => x.Id == id)
-            ?? throw new Exception("Refresh token not found.");
+    public async Task<RefreshTokenModel?> GetByIdAsync(Guid id) 
+        => await context.Refreshes.FirstOrDefaultAsync(x => x.Id == id);
 }

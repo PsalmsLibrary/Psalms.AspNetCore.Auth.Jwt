@@ -54,6 +54,12 @@ public partial class PsalmsJwtTokenService
         if (auth.RefreshTokenModel.RefreshToken is null) throw new NullReferenceException("Refresh token is null.");
 
         if (_refreshTokenRepository is null) throw new Exception("RefreshTokenRepository was not configured.");
+
+        if (DateTime.UtcNow > auth.RefreshTokenModel.Expires)
+        {
+            await _refreshTokenRepository.DeleteRefreshTokenAsync(auth.RefreshTokenModel.Id);
+            throw new Exception("Refresh token has expired.");
+        }
     }
 
     /// <summary>
@@ -76,5 +82,4 @@ public partial class PsalmsJwtTokenService
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
         };
     }
-
 }

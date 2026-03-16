@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Psalms.AspNetCore.Auth.Jwt.Interfaces;
 using Psalms.AspNetCore.Auth.Jwt.Models;
 using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken;
+using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken.Cache;
+using Psalms.AspNetCore.Auth.Jwt.Repository.RefreshToken.EF;
+using Psalms.AspNetCore.Auth.Jwt.Services;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Psalms.Auth.Jwt;
@@ -14,7 +17,7 @@ namespace Psalms.Auth.Jwt;
 /// Part of the <c>Psalms</c> library family, this service offers a clean and reusable way
 /// to issue signed tokens for authentication and authorization purposes.
 /// </summary>
-public partial class PsalmsJwtTokenService
+public partial class PsalmsJwtTokenService : IPsalmsJwtTokenService
 {
     #region Attributes
 
@@ -68,6 +71,9 @@ public partial class PsalmsJwtTokenService
         _tokenHandler       = new(() => new JwtSecurityTokenHandler());
         _refreshTokenHasher = new(() => new PasswordHasher<RefreshTokenModel>());
     }
+
+    public PsalmsJwtTokenService(IConfiguration configuration, IDistributedCache cache) : this(configuration)
+        => _refreshTokenRepository = new DistributedCacheRepository(cache);
     public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenEFContext context) : this(configuration)
         => _refreshTokenRepository = new EFRefreshTokenRepository(context);
     public PsalmsJwtTokenService(IConfiguration configuration, IPsalmsRefreshTokenRepository repository) : this(configuration)
